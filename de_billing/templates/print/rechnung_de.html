@@ -1,0 +1,186 @@
+{#- German invoice layout (DIN 5008 style) for Rechnung, Abschlagsrechnung, Schlussrechnung and Rechnungskorrektur. -#}
+{%- set c = get_invoice_context(doc) -%}
+<style>
+	.rde { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 8.4pt; color: #1d2428; line-height: 1.35; }
+	.rde table { width: 100%; border-collapse: collapse; }
+	.rde td, .rde th { vertical-align: top; padding: 0 !important; }
+	.rde .brand { font-size: 15pt; font-weight: 700; color: #0b4f5c; letter-spacing: .2px; }
+	.rde .brand-sub { font-size: 7pt; color: #5e7176; text-transform: uppercase; letter-spacing: 1.4px; }
+	.rde .contact { text-align: right; font-size: 7.4pt; color: #5e7176; line-height: 1.45; }
+	.rde .sender { font-size: 7pt; color: #5e7176; border-bottom: .5pt solid #9aa9ad; padding-bottom: 1mm; margin-bottom: 2mm; }
+	.rde .recipient { font-size: 9pt; line-height: 1.45; }
+	.rde .meta td { padding: .3mm 0 !important; font-size: 8pt; border: none; }
+	.rde .meta .mk { color: #5e7176; padding-right: 4mm !important; white-space: nowrap; }
+	.rde .meta .mv { text-align: right; font-weight: 600; white-space: nowrap; }
+	.rde h1 { font-size: 13pt; font-weight: 700; margin: 8mm 0 1mm; color: #12262b; }
+	.rde .subject { color: #5e7176; margin-bottom: 3mm; }
+	.rde .items th { font-size: 6.8pt; text-transform: uppercase; letter-spacing: .6px; color: #0b4f5c; border-bottom: 1.2pt solid #0b4f5c; padding: 1.4mm 1.2mm !important; text-align: left; }
+	.rde .items td { padding: 1.3mm 1.2mm !important; border-bottom: .5pt solid #d6e0e2; }
+	.rde .items .num { text-align: right; white-space: nowrap; }
+	.rde .items .desc { color: #5e7176; font-size: 7.4pt; margin-top: .4mm; }
+	.rde .totals { width: 58%; margin-left: 42%; margin-top: 3mm; }
+	.rde .totals td { padding: .8mm 1.2mm !important; white-space: nowrap; }
+	.rde .totals .num { text-align: right; white-space: nowrap; }
+	.rde .totals .sum td { border-top: .8pt solid #12262b; font-weight: 700; }
+	.rde .totals .grand td { border-top: 1.2pt solid #0b4f5c; border-bottom: 1.2pt solid #0b4f5c; font-weight: 700; font-size: 10pt; color: #0b4f5c; padding: 1.6mm 1.2mm !important; }
+	.rde .section-title { font-size: 6.8pt; text-transform: uppercase; letter-spacing: .6px; color: #0b4f5c; margin: 5mm 0 1mm; font-weight: 700; }
+	.rde .deductions th { font-size: 6.8pt; color: #5e7176; border-bottom: .8pt solid #9aa9ad; padding: 1.2mm !important; text-align: left; font-weight: 600; }
+	.rde .deductions td { padding: .9mm 1.2mm !important; border-bottom: .5pt solid #d6e0e2; }
+	.rde .deductions .num { text-align: right; white-space: nowrap; }
+	.rde .deductions .sum td { font-weight: 700; border-bottom: none; }
+	.rde .notes { margin-top: 6mm; }
+	.rde .notes p { margin: 0 0 1.6mm; }
+	.rde .legal { font-weight: 600; color: #12262b; }
+	.rde-footer { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 7pt; color: #5e7176; border-top: .5pt solid #9aa9ad; padding-top: 1.5mm; line-height: 1.45; }
+	.rde-footer table { width: 100%; }
+	.rde-footer td { vertical-align: top; width: 33%; }
+	.rde-footer strong { color: #1d2428; }
+</style>
+
+<div class="rde">
+	<table>
+		<tr>
+			<td style="width: 60%">
+				<div class="brand">{{ c.company.name }}</div>
+				{% if c.company.tagline %}<div class="brand-sub">{{ c.company.tagline }}</div>{% endif %}
+			</td>
+			<td class="contact">
+				{{ c.company.street }}<br>{{ c.company.city }}<br>
+				{% if c.company.phone %}Tel. {{ c.company.phone }}<br>{% endif %}
+				{% if c.company.email %}{{ c.company.email }}<br>{% endif %}
+				{% if c.company.website %}{{ c.company.website }}{% endif %}
+			</td>
+		</tr>
+	</table>
+
+	<table style="margin-top: 9mm">
+		<tr>
+			<td style="width: 58%; padding-right: 8mm !important">
+				<div class="sender">{{ c.company.sender_line }}</div>
+				<div class="recipient">
+					{% for line in c.recipient %}{{ line }}<br>{% endfor %}
+				</div>
+			</td>
+			<td>
+				<table class="meta">
+					{% for label, value in c.meta %}
+					<tr><td class="mk">{{ label }}</td><td class="mv">{{ value }}</td></tr>
+					{% endfor %}
+				</table>
+			</td>
+		</tr>
+	</table>
+
+	<h1>{{ c.title }} {{ doc.name }}</h1>
+	<div class="subject">Sehr geehrte Damen und Herren, {{ c.intro }}</div>
+
+	<table class="items">
+		<thead>
+			<tr>
+				<th style="width: 7%">Pos.</th>
+				<th>Bezeichnung</th>
+				<th class="num" style="width: 9%">Menge</th>
+				<th style="width: 9%">Einheit</th>
+				<th class="num" style="width: 14%">Einzelpreis</th>
+				<th class="num" style="width: 7%">USt.</th>
+				<th class="num" style="width: 15%">Gesamt</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for p in c.positions %}
+			<tr>
+				<td>{{ p.pos }}</td>
+				<td>
+					{{ p.title }}
+					{% if p.description %}<div class="desc">{{ p.description }}</div>{% endif %}
+				</td>
+				<td class="num">{{ p.qty }}</td>
+				<td>{{ p.uom }}</td>
+				<td class="num">{{ p.rate }}</td>
+				<td class="num">{{ p.vat }}</td>
+				<td class="num">{{ p.amount }}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+	{% if c.is_final %}
+	<table class="totals">
+		<tr><td>Summe der Leistungen netto</td><td class="num">{{ c.net_services }}</td></tr>
+		{% for line in c.vat_lines %}
+		<tr><td>{{ line.label }}</td><td class="num">{{ line.vat }}</td></tr>
+		{% endfor %}
+		<tr class="sum"><td>Gesamtbetrag der Leistungen</td><td class="num">{{ c.gross_services }}</td></tr>
+	</table>
+
+	{% if c.deductions %}
+	<div class="section-title">Abzüglich erhaltener Abschlagszahlungen</div>
+	<table class="deductions">
+		<thead>
+			<tr>
+				<th>Abschlagsrechnung</th>
+				<th>vom</th>
+				<th class="num">netto</th>
+				<th class="num">USt.</th>
+				<th class="num">Zahlungseingang</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for d in c.deductions %}
+			<tr>
+				<td>{{ d.invoice }}</td>
+				<td>{{ d.date }}</td>
+				<td class="num">{{ d.net }}</td>
+				<td class="num">{{ d.vat }}</td>
+				<td class="num">{{ d.gross }}</td>
+			</tr>
+			{% endfor %}
+			<tr class="sum"><td colspan="4">Summe der erhaltenen Abschlagszahlungen</td><td class="num">{{ c.prepaid }}</td></tr>
+		</tbody>
+	</table>
+	{% endif %}
+
+	<table class="totals">
+		<tr class="grand"><td>Verbleibender Rechnungsbetrag</td><td class="num">{{ c.grand_total }}</td></tr>
+	</table>
+	{% else %}
+	<table class="totals">
+		<tr><td>Summe netto</td><td class="num">{{ c.net_total }}</td></tr>
+		{% for line in c.vat_lines %}
+		<tr><td>{{ line.label }}</td><td class="num">{{ line.vat }}</td></tr>
+		{% endfor %}
+		<tr class="grand"><td>{% if doc.is_return %}Korrekturbetrag{% else %}Rechnungsbetrag{% endif %}</td><td class="num">{{ c.grand_total }}</td></tr>
+	</table>
+	{% endif %}
+
+	<div class="notes">
+		{% for note in c.notes %}<p class="legal">{{ note }}</p>{% endfor %}
+		{% if c.payment_note %}<p>{{ c.payment_note }}</p>{% endif %}
+		<p>Mit freundlichen Grüßen<br>{{ c.company.name }}</p>
+	</div>
+</div>
+
+<div id="footer-html" class="visible-pdf">
+	<div class="rde-footer">
+		<table>
+			<tr>
+				<td>
+					<strong>{{ c.company.name }}</strong><br>
+					{{ c.company.street }}, {{ c.company.city }}<br>
+					{% if c.company.email %}{{ c.company.email }}{% endif %}
+				</td>
+				<td>
+					{% for line in c.company.registration %}{{ line }}<br>{% endfor %}
+					{% if c.company.tax_id %}USt-IdNr.: {{ c.company.tax_id }}{% endif %}
+				</td>
+				<td>
+					{% if c.company.bank %}
+					<strong>{{ c.company.bank.bank }}</strong><br>
+					IBAN: {{ c.company.bank.iban_display }}<br>
+					{% if c.company.bank.branch_code %}BIC: {{ c.company.bank.branch_code }}{% endif %}
+					{% endif %}
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

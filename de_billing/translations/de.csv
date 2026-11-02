@@ -1,0 +1,71 @@
+Down Payment Deduction,Verrechnete Abschlagszahlung
+Webhook Delivery,Webhook-Zustellung
+DE Billing Settings,DE Billing Einstellungen
+Down Payment Invoice,Abschlagsrechnung
+Final Invoice,Schlussrechnung
+Correction Invoice,Rechnungskorrektur
+Business Customer,Gewerbekunde
+Private Customer,Privatkunde
+Invoice Kind,Rechnungsart
+Down Payment No.,Abschlag Nr.
+Service Date / Period,Leistungsdatum / -zeitraum
+Closes Down Payment For,Schließt Abschlag für
+Down Payments Received,Erhaltene Abschlagszahlungen
+Down-Payment Deductions,Verrechnete Abschlagszahlungen
+Total of Services (gross),Gesamtbetrag der Leistungen (brutto)
+Prepaid Amount (BT-113),Vorausbezahlter Betrag (BT-113)
+Supabase ID,Supabase-ID
+API Idempotency Key,API-Idempotenzschlüssel
+Customer Kind,Kundenart
+Public Authority,Öffentlicher Auftraggeber
+Deduction for Down-Payment Invoice,Abzug für Abschlagsrechnung
+VAT on Deducted Down Payments,USt. auf verrechnete Abschläge
+Down-Payment Invoice,Abschlagsrechnung
+Invoice Date,Rechnungsdatum
+Invoiced (gross),Berechnet (brutto)
+Received (gross),Zahlungseingang (brutto)
+Deducted Net,Verrechnet netto
+Deducted VAT,Verrechnete USt.
+Unpaid (closed),Unbezahlt (ausgebucht)
+Closing Correction Invoice,Ausbuchende Rechnungskorrektur
+Event ID,Ereignis-ID
+Reference Type,Referenztyp
+Next Attempt At,Nächster Versuch
+Last HTTP Status,Letzter HTTP-Status
+Delivered At,Zugestellt am
+Last Error,Letzter Fehler
+Payload (JSON),Inhalt (JSON)
+Retry now,Jetzt erneut senden
+Enable Webhooks,Webhooks aktivieren
+Endpoint URL,Endpunkt-URL
+Signing Secret,Signaturschlüssel
+Max Attempts,Maximale Versuche
+Request Timeout (s),Zeitlimit (s)
+Final Invoices,Schlussrechnungen
+Close Unpaid Down Payments on Final Invoice,Unbezahlte Abschläge mit der Schlussrechnung ausbuchen
+"Every request is signed with HMAC-SHA256 using this secret. Share it with the receiving app only.","Jede Anfrage wird mit HMAC-SHA256 und diesem Schlüssel signiert. Nur mit der empfangenden Anwendung teilen."
+"When a final invoice is submitted, the unpaid part of each down-payment invoice is closed with a correction invoice, so it is never dunned.","Beim Buchen der Schlussrechnung wird der unbezahlte Teil jeder Abschlagsrechnung per Rechnungskorrektur ausgebucht und daher nie gemahnt."
+"Down-payment and final invoices of one order are settled against each other.","Abschlags- und Schlussrechnungen eines Auftrags werden miteinander verrechnet."
+"Date or period of the service (§ 14 Abs. 4 Nr. 6 UStG), printed on the invoice.","Zeitpunkt oder Zeitraum der Leistung (§ 14 Abs. 4 Nr. 6 UStG), wird auf der Rechnung gedruckt."
+"Down payments received and deducted on this invoice. Maps to BT-113 in ZUGFeRD / XRechnung.","Erhaltene und auf dieser Rechnung verrechnete Abschlagszahlungen. Entspricht BT-113 in ZUGFeRD / XRechnung."
+"Primary key of this customer in the office app. Customers are copies keyed on this ID.","Primärschlüssel des Kunden in der Büro-App. Kunden sind Kopien mit diesem Schlüssel."
+"Buyer reference for XRechnung (BT-10), required by public-sector customers.","Käuferreferenz für die XRechnung (BT-10), bei öffentlichen Auftraggebern Pflicht."
+"Row {0}: the item {1} can only be used on a down-payment invoice.","Zeile {0}: Der Artikel {1} ist nur auf Abschlagsrechnungen zulässig."
+"Add the down-payment amount as a row with the item {0}.","Bitte den Abschlagsbetrag als Zeile mit dem Artikel {0} erfassen."
+"Row {0}: a down-payment invoice may only contain the item {1}.","Zeile {0}: Eine Abschlagsrechnung darf nur den Artikel {1} enthalten."
+"Row {0}: order {1} contains items with different VAT rates. Set the item tax template of the down payment row.","Zeile {0}: Auftrag {1} enthält Positionen mit unterschiedlichen Steuersätzen. Bitte die Artikelsteuervorlage der Abschlagszeile setzen."
+"Add the services of order {0} to the final invoice.","Bitte die Leistungen des Auftrags {0} in die Schlussrechnung übernehmen."
+"Row {0}: down payments are deducted automatically, remove the item {1}.","Zeile {0}: Abschläge werden automatisch abgezogen, bitte den Artikel {1} entfernen."
+"Down-payment invoice {0} is already deducted on another final invoice.","Abschlagsrechnung {0} wurde bereits auf einer anderen Schlussrechnung verrechnet."
+Double deduction,Doppelte Verrechnung
+Select the order this invoice belongs to.,Bitte den Auftrag dieser Rechnung auswählen.
+Order {0} must be submitted.,Auftrag {0} muss gebucht sein.
+Order {0} belongs to a different customer or company.,Auftrag {0} gehört zu einem anderen Kunden oder Unternehmen.
+"Account {0} is missing in the chart of accounts of {1}.","Konto {0} fehlt im Kontenplan von {1}."
+The webhook endpoint must be an http(s) URL.,Der Webhook-Endpunkt muss eine http(s)-URL sein.
+Public-sector customers need a Leitweg-ID for XRechnung.,Öffentliche Auftraggeber benötigen eine Leitweg-ID für die XRechnung.
+Leitweg-ID missing,Leitweg-ID fehlt
+"{0} is not a valid Leitweg-ID (e.g. 04011000-1234512345-06).","{0} ist keine gültige Leitweg-ID (z. B. 04011000-1234512345-06)."
+"The down payments received ({0} net) exceed the services on this final invoice ({1} net). Bill the full order on the final invoice, or refund the difference with a correction invoice.","Die erhaltenen Abschlagszahlungen ({0} netto) übersteigen die Leistungen dieser Schlussrechnung ({1} netto). Bitte den vollständigen Auftrag abrechnen oder die Differenz per Rechnungskorrektur erstatten."
+Down payments exceed services,Abschläge übersteigen Leistungen
+Attempts,Versuche

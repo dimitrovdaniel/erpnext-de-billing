@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .
+
+  tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=5s --health-timeout=2s --health-retries=20
+      redis-cache:
+        image: redis:6.2-alpine
+        ports:
+          - 13000:6379
+      redis-queue:
+        image: redis:6.2-alpine
+        ports:
+          - 11000:6379
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: de_billing
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: System packages (MariaDB client, patched wkhtmltopdf for PDF tests)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mariadb-client xfonts-75dpi xfonts-base
+          wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.jammy_amd64.deb
+          sudo apt-get install -y ./wkhtmltox_0.12.6.1-2.jammy_amd64.deb
+
+      - name: MariaDB character set
+        run: |
+          mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
+          mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
+
+      - name: Bench with Frappe and ERPNext v15
+        run: |
+          pip install frappe-bench
+          npm install -g yarn
+          bench init --skip-redis-config-generation --frappe-branch version-15 --python "$(which python)" ~/frappe-bench
+          cd ~/frappe-bench
+          bench set-config -g db_host 127.0.0.1
+          bench set-config -gp db_port 3306
+          bench set-config -g redis_cache redis://127.0.0.1:13000
+          bench set-config -g redis_queue redis://127.0.0.1:11000
+          bench set-config -g redis_socketio redis://127.0.0.1:11000
+          bench get-app --branch version-15 erpnext
+          bench get-app "$GITHUB_WORKSPACE/de_billing"
+
+      - name: Site with a German SKR03 company
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench new-site test_site --mariadb-user-host-login-scope='%' --db-root-username root --db-root-password root --admin-password admin --install-app erpnext
+          YEAR=$(date +%Y)
+          ARGS='{"args": {"language": "English", "country": "Germany", "timezone": "Europe/Berlin", "currency": "EUR", "full_name": "CI", "email": "ci@example.com", "password": "ci-password", "company_name": "Test Haustechnik GmbH", "company_abbr": "THT", "chart_of_accounts": "SKR03 mit Kontonummern", "fy_start_date": "YEAR-01-01", "fy_end_date": "YEAR-12-31"}}'
+          bench --site test_site execute frappe.desk.page.setup_wizard.setup_wizard.setup_complete --kwargs "${ARGS//YEAR/$YEAR}"
+          bench --site test_site install-app de_billing
+          bench --site test_site set-config allow_tests true
+          bench --site test_site set-config host_name http://127.0.0.1:8000
+          bench use test_site
+
+      - name: Run tests
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench serve --port 8000 &> serve.log &
+          bench --site test_site run-tests --app de_billing

@@ -1,0 +1,289 @@
+openapi: 3.0.3
+info:
+  title: DE Billing API
+  version: 1.0.0
+  description: |
+    REST API of the `de_billing` Frappe app. The office app (Supabase / React) drives ERPNext through
+    these endpoints; ERPNext reports back through signed webhooks (see README).
+
+    * Customers, items and orders are referenced by their **Supabase ID**.
+    * `create_invoice` and `create_order` are **idempotent**: repeating a call returns the original result.
+    * Frappe wraps every response body in `{"message": ...}`. Validation errors return HTTP 417 with a
+      readable message in `_server_messages`.
+servers:
+  - url: https://erp.example.com/api/method
+security:
+  - token: []
+
+paths:
+  /de_billing.api.v1.upsert_customer:
+    post:
+      summary: Create or update a customer copy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supabase_id, customer_name]
+              properties:
+                supabase_id: { type: string, example: c_nordlicht }
+                customer_name: { type: string, example: Bauträger Nordlicht GmbH }
+                kind: { type: string, enum: [business, private, public_authority], default: business }
+                tax_treatment:
+                  type: string
+                  enum: [domestic, reverse_charge_13b, eu_goods, eu_services]
+                  default: domestic
+                email: { type: string, format: email }
+                tax_id: { type: string, description: USt-IdNr. / VAT ID, example: DE287346110 }
+                leitweg_id: { type: string, description: Required for public_authority, example: 04011000-1234512345-06 }
+                address:
+                  type: object
+                  properties:
+                    line1: { type: string, example: Am Sandtorkai 41 }
+                    line2: { type: string }
+                    pincode: { type: string, example: "20457" }
+                    city: { type: string, example: Hamburg }
+                    country: { type: string, default: Germany }
+      responses:
+        "200":
+          description: Customer name in ERPNext
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      name: { type: string }
+                      created: { type: boolean }
+
+  /de_billing.api.v1.upsert_item:
+    post:
+      summary: Create or update an item and its selling price
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supabase_id, item_name]
+              properties:
+                supabase_id: { type: string, example: i_mont }
+                item_code: { type: string, description: Defaults to supabase_id, example: MONT-STD }
+                item_name: { type: string, example: Montage Heizung / Sanitär (Monteurstunde) }
+                rate: { type: number, example: 78.0 }
+                vat_rate: { type: integer, enum: [19, 7, 0], default: 19 }
+                uom: { type: string, default: Stk, example: Std. }
+                description: { type: string }
+      responses:
+        "200":
+          description: Item code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      item_code: { type: string }
+                      created: { type: boolean }
+
+  /de_billing.api.v1.create_order:
+    post:
+      summary: Create and submit a sales order (idempotent on supabase_id)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supabase_id, customer, items]
+              properties:
+                supabase_id: { type: string, example: o_nordlicht_elbblick }
+                customer: { type: string, description: Customer supabase_id }
+                items: { type: array, items: { $ref: "#/components/schemas/Line" } }
+                transaction_date: { type: string, format: date }
+                delivery_date: { type: string, format: date }
+                po_no: { type: string, description: Customer's order reference, example: NL-2026-117 }
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      name: { type: string, example: AB-2026-00001 }
+                      created: { type: boolean }
+                      grand_total: { type: number }
+
+  /de_billing.api.v1.create_invoice:
+    post:
+      summary: Create (and submit) an invoice — standard, down payment or final
+      description: |
+        * `standard`: `items` required.
+        * `down_payment`: `order` plus `amount` (net) or `percent` of the order's net total.
+        * `final`: `order`; `items` default to all items of the order. Every down payment actually
+          received is deducted (net and VAT per down-payment invoice); unpaid down payments are closed
+          with a correction invoice when the final invoice is submitted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idempotency_key, customer]
+              properties:
+                idempotency_key: { type: string, example: office-app-7f3c2a }
+                customer: { type: string, description: Customer supabase_id }
+                kind: { type: string, enum: [standard, down_payment, final], default: standard }
+                order: { type: string, description: "Order supabase_id (down_payment, final)" }
+                items: { type: array, items: { $ref: "#/components/schemas/Line" } }
+                amount: { type: number, description: Net down-payment amount }
+                percent: { type: number, description: Down payment as percent of the order net total }
+                posting_date: { type: string, format: date }
+                due_days: { type: integer, default: 14 }
+                service_period: { type: string, description: Leistungsdatum / -zeitraum, example: 03.08.2026 – 30.10.2026 }
+                supabase_id: { type: string, description: The office app's own invoice id }
+                submit: { type: boolean, default: true }
+      responses:
+        "200":
+          description: Invoice summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { $ref: "#/components/schemas/Invoice" }
+
+  /de_billing.api.v1.get_invoice:
+    get:
+      summary: Invoice summary by ERPNext name or supabase_id
+      parameters:
+        - { name: name, in: query, schema: { type: string }, example: SR-2026-00001 }
+        - { name: supabase_id, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Invoice summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { $ref: "#/components/schemas/Invoice" }
+
+  /de_billing.api.v1.get_invoice_pdf:
+    get:
+      summary: Invoice PDF (German layout), base64 encoded
+      parameters:
+        - { name: name, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: PDF
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      filename: { type: string, example: SR-2026-00001.pdf }
+                      content_base64: { type: string }
+
+  /de_billing.api.v1.record_payment:
+    post:
+      summary: Book an incoming payment against an invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [invoice, amount]
+              properties:
+                invoice: { type: string, example: AR-2026-00002 }
+                amount: { type: number, example: 12000.0 }
+                posting_date: { type: string, format: date }
+                reference_no: { type: string }
+                mode_of_payment: { type: string, default: Überweisung }
+      responses:
+        "200":
+          description: Payment entry and remaining outstanding amount
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      name: { type: string }
+                      amount: { type: number }
+                      invoices:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            invoice: { type: string }
+                            allocated: { type: number }
+                      invoice_outstanding: { type: number }
+
+components:
+  securitySchemes:
+    token:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: "token <api_key>:<api_secret> of the integration user"
+  schemas:
+    Line:
+      type: object
+      required: [item]
+      properties:
+        item: { type: string, description: Item supabase_id }
+        qty: { type: number, default: 1 }
+        rate: { type: number, description: Defaults to the item's selling price }
+        description: { type: string }
+    Invoice:
+      type: object
+      properties:
+        name: { type: string, example: SR-2026-00001 }
+        supabase_id: { type: string }
+        kind: { type: string, enum: [standard, down_payment, final, credit_note] }
+        status: { type: string, example: Unpaid }
+        docstatus: { type: integer, description: "0 draft, 1 submitted, 2 cancelled" }
+        customer: { type: string }
+        customer_supabase_id: { type: string }
+        order: { type: string }
+        down_payment_no: { type: integer, nullable: true }
+        return_against: { type: string, nullable: true }
+        closes_down_payment_for: { type: string, nullable: true }
+        posting_date: { type: string, format: date }
+        due_date: { type: string, format: date }
+        currency: { type: string, example: EUR }
+        net_total: { type: number, example: 26112.97 }
+        total_taxes: { type: number, example: 4961.46 }
+        grand_total: { type: number, example: 31074.43 }
+        outstanding_amount: { type: number }
+        total_before_deductions: { type: number, nullable: true, example: 61534.9 }
+        prepaid_amount: { type: number, description: BT-113, example: 30460.47 }
+        deductions:
+          type: array
+          items:
+            type: object
+            properties:
+              down_payment_invoice: { type: string, example: AR-2026-00002 }
+              invoiced: { type: number, example: 18460.47 }
+              received: { type: number, example: 12000.0 }
+              net: { type: number, example: 10084.03 }
+              vat: { type: number, example: 1915.97 }
+              unpaid_closed: { type: number, example: 6460.47 }
+              closing_document: { type: string, nullable: true, example: RK-2026-00001 }
+        replayed: { type: boolean, description: true when an earlier call with the same idempotency_key created it }

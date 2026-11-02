@@ -1,0 +1,43 @@
+{
+ "actions": [],
+ "creation": "2026-11-02 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "down_payment_invoice",
+  "posting_date",
+  "invoiced_amount",
+  "column_break_1",
+  "paid_amount",
+  "net_amount",
+  "tax_amount",
+  "column_break_2",
+  "unpaid_amount",
+  "closing_document"
+ ],
+ "fields": [
+  {"fieldname": "down_payment_invoice", "fieldtype": "Link", "in_list_view": 1, "label": "Down-Payment Invoice", "options": "Sales Invoice", "read_only": 1, "reqd": 1, "columns": 2},
+  {"fieldname": "posting_date", "fieldtype": "Date", "in_list_view": 1, "label": "Invoice Date", "read_only": 1, "columns": 1},
+  {"fieldname": "invoiced_amount", "fieldtype": "Currency", "label": "Invoiced (gross)", "options": "currency", "read_only": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "paid_amount", "fieldtype": "Currency", "in_list_view": 1, "label": "Received (gross)", "options": "currency", "read_only": 1, "columns": 2},
+  {"fieldname": "net_amount", "fieldtype": "Currency", "in_list_view": 1, "label": "Deducted Net", "options": "currency", "read_only": 1, "columns": 2},
+  {"fieldname": "tax_amount", "fieldtype": "Currency", "in_list_view": 1, "label": "Deducted VAT", "options": "currency", "read_only": 1, "columns": 1},
+  {"fieldname": "column_break_2", "fieldtype": "Column Break"},
+  {"fieldname": "unpaid_amount", "fieldtype": "Currency", "in_list_view": 1, "label": "Unpaid (closed)", "options": "currency", "read_only": 1, "columns": 1},
+  {"fieldname": "closing_document", "fieldtype": "Link", "in_list_view": 1, "label": "Closing Correction Invoice", "options": "Sales Invoice", "read_only": 1, "no_copy": 1, "columns": 1}
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-02 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "DE Billing",
+ "name": "Down Payment Deduction",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

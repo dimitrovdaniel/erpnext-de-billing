@@ -1,0 +1,43 @@
+{
+ "actions": [],
+ "creation": "2026-11-02 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_webhooks",
+  "enable_webhooks",
+  "webhook_url",
+  "webhook_secret",
+  "column_break_1",
+  "max_attempts",
+  "timeout_seconds",
+  "section_invoicing",
+  "close_unpaid_down_payments"
+ ],
+ "fields": [
+  {"fieldname": "section_webhooks", "fieldtype": "Section Break", "label": "Webhooks"},
+  {"default": "0", "fieldname": "enable_webhooks", "fieldtype": "Check", "label": "Enable Webhooks"},
+  {"depends_on": "enable_webhooks", "fieldname": "webhook_url", "fieldtype": "Data", "label": "Endpoint URL", "mandatory_depends_on": "enable_webhooks"},
+  {"depends_on": "enable_webhooks", "description": "Every request is signed with HMAC-SHA256 using this secret. Share it with the receiving app only.", "fieldname": "webhook_secret", "fieldtype": "Password", "label": "Signing Secret", "mandatory_depends_on": "enable_webhooks"},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"default": "8", "fieldname": "max_attempts", "fieldtype": "Int", "label": "Max Attempts", "non_negative": 1},
+  {"default": "10", "fieldname": "timeout_seconds", "fieldtype": "Int", "label": "Request Timeout (s)", "non_negative": 1},
+  {"fieldname": "section_invoicing", "fieldtype": "Section Break", "label": "Final Invoices"},
+  {"default": "1", "description": "When a final invoice is submitted, the unpaid part of each down-payment invoice is closed with a correction invoice, so it is never dunned.", "fieldname": "close_unpaid_down_payments", "fieldtype": "Check", "label": "Close Unpaid Down Payments on Final Invoice"}
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-11-02 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "DE Billing",
+ "name": "DE Billing Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {"read": 1, "write": 1, "create": 1, "role": "System Manager"},
+  {"read": 1, "role": "Accounts Manager"}
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
