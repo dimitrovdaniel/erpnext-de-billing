@@ -1,5 +1,7 @@
 # DE Billing — German invoicing for ERPNext
 
+[![CI](https://github.com/dimitrovdaniel/erpnext-de-billing/actions/workflows/ci.yml/badge.svg)](https://github.com/dimitrovdaniel/erpnext-de-billing/actions/workflows/ci.yml)
+
 A Frappe custom app that turns ERPNext into the financial back end for a German contractor whose
 day-to-day work happens in a separate office app (Supabase / React). The office app drives ERPNext
 through a REST API and gets told about everything that happens through signed webhooks. Office staff
